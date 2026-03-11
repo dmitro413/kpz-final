@@ -1,12 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
+﻿
 namespace WpfLibrary.services
 {
-    internal class IMineGenerator
+    public interface IMineGenerator
     {
+        void PlaceMines(models.Board board, int safeRow, int safeCol);
     }
 }
+
