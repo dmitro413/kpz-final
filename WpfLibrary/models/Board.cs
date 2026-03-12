@@ -43,6 +43,12 @@
                         yield return Cells[newRow, newCol];
                 }
         }
+        public IEnumerable<Cell> GetAllCells()
+        {
+            for (int row = 0; row < Rows; row++)
+                for (int col = 0; col < Columns; col++)
+                    yield return Cells[row, col];
+        }
 
         public bool IsInBounds(int row, int col) =>
             row >= 0 && row < Rows && col >= 0 && col < Columns;
