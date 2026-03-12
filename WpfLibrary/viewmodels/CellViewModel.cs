@@ -1,7 +1,4 @@
-﻿using System.Windows.Input;
-using WpfLibrary.Commands;
-using WpfLibrary.models;
-using WpfLibrary.ViewModels;
+﻿using WpfLibrary.models;
 
 namespace WpfLibrary.viewmodels
 {
@@ -18,16 +15,10 @@ namespace WpfLibrary.viewmodels
         public int AdjacentMines => _cell.AdjacentMines;
         public bool ShowNumber => IsRevealed && !IsMine && AdjacentMines > 0;
 
-        public ICommand RevealCommand { get; }
-        public ICommand ToggleFlagCommand { get; }
-
-        public CellViewModel(Cell cell, RelayCommand revealCommand, ICommand toggleFlagCommand)
+        public CellViewModel(Cell cell)
         {
             _cell = cell;
-            RevealCommand = revealCommand;
-            ToggleFlagCommand = toggleFlagCommand;
         }
-
         public void Refresh()
         {
             OnPropertyChanged(nameof(IsRevealed));
