@@ -2,25 +2,17 @@
 
 namespace WpfLibrary.services
 {
-    public enum GameState
-    {
-        NotStarted,
-        InProgress,
-        Won,
-        Lost
-    }
-
     public class GameService
     {
         private readonly IMineGenerator _mineGenerator;
 
         public Board Board { get; private set; }
-        public GameState State { get; private set; }
-        public bool IsFirstMove { get; private set; }
+        public GameState State { get; private set; } = GameState.NotStarted;
+        public Difficulty CurrentDifficulty { get; private set; }
 
-        public event Action OnGameWon;
-        public event Action OnGameLost;
-        public event Action OnBoardChanged;
+        public event Action GameWon;
+        public event Action GameLost;
+        public event Action BoardChanged;
 
         public GameService(IMineGenerator mineGenerator)
         {
@@ -29,23 +21,22 @@ namespace WpfLibrary.services
 
         public void StartNewGame(Difficulty difficulty)
         {
+            CurrentDifficulty = difficulty;
             Board = new Board(difficulty.Rows, difficulty.Columns, difficulty.MineCount);
             State = GameState.NotStarted;
-            IsFirstMove = true;
         }
 
         public void RevealCell(int row, int col)
         {
-            if (State == GameState.Won || State == GameState.Lost) return;
+            if (State.IsOver) return;
 
             var cell = Board.GetCell(row, col);
             if (cell.IsRevealed || cell.IsFlagged) return;
 
-            if (IsFirstMove)
+            if (!State.IsActive)
             {
                 _mineGenerator.PlaceMines(Board, row, col);
                 State = GameState.InProgress;
-                IsFirstMove = false;
             }
 
             if (cell.IsMine)
@@ -53,23 +44,23 @@ namespace WpfLibrary.services
                 cell.State = CellState.Revealed;
                 State = GameState.Lost;
                 RevealAllMines();
-                OnGameLost?.Invoke();
+                GameLost?.Invoke();
                 return;
             }
 
             FloodReveal(row, col);
-            OnBoardChanged?.Invoke();
+            BoardChanged?.Invoke();
 
             if (CheckWinCondition())
             {
                 State = GameState.Won;
-                OnGameWon?.Invoke();
+                GameWon?.Invoke();
             }
         }
 
         public void ToggleFlag(int row, int col)
         {
-            if (State == GameState.Won || State == GameState.Lost) return;
+            if (State.IsOver) return;
 
             var cell = Board.GetCell(row, col);
             if (cell.IsRevealed) return;
@@ -85,7 +76,7 @@ namespace WpfLibrary.services
                 Board.IncrementFlagCount();
             }
 
-            OnBoardChanged?.Invoke();
+            BoardChanged?.Invoke();
         }
 
         private void FloodReveal(int row, int col)
@@ -106,23 +97,15 @@ namespace WpfLibrary.services
 
         private bool CheckWinCondition()
         {
-            for (int row = 0; row < Board.Rows; row++)
-                for (int col = 0; col < Board.Columns; col++)
-                {
-                    var cell = Board.GetCell(row, col);
-                    if (!cell.IsMine && !cell.IsRevealed) return false;
-                }
+            foreach (var cell in Board.GetAllCells())
+                if (!cell.IsMine && !cell.IsRevealed) return false;
             return true;
         }
 
         private void RevealAllMines()
         {
-            for (int row = 0; row < Board.Rows; row++)
-                for (int col = 0; col < Board.Columns; col++)
-                {
-                    var cell = Board.GetCell(row, col);
-                    if (cell.IsMine) cell.State = CellState.Revealed;
-                }
+            foreach (var cell in Board.GetAllCells())
+                if (cell.IsMine) cell.State = CellState.Revealed;
         }
     }
 }
