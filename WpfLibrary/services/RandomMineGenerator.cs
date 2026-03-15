@@ -27,7 +27,8 @@ namespace WpfLibrary.services
             for (int row = 0; row < board.Rows; row++)
                 for (int col = 0; col < board.Columns; col++)
                 {
-                    if (row != safeRow || col != safeCol)
+                    bool inSafeZone = Math.Abs(row - safeRow) <= 1 && Math.Abs(col - safeCol) <= 1;
+                    if (!inSafeZone)
                         positions.Add((row, col));
                 }
 

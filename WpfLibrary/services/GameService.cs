@@ -44,6 +44,7 @@ namespace WpfLibrary.services
                 cell.State = CellState.Revealed;
                 State = GameState.Lost;
                 RevealAllMines();
+                BoardChanged?.Invoke();
                 GameLost?.Invoke();
                 return;
             }
@@ -72,6 +73,7 @@ namespace WpfLibrary.services
             }
             else
             {
+                if (Board.FlagCount >= Board.MineCount) return;
                 cell.State = CellState.Flagged;
                 Board.IncrementFlagCount();
             }

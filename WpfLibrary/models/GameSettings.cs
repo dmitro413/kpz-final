@@ -21,6 +21,7 @@
 
         public Difficulty GetDifficulty() => SelectedDifficulty switch
         {
+            DifficultyLevel.UltraEasy => Difficulty.UltraEasy,
             DifficultyLevel.Easy => Difficulty.Easy,
             DifficultyLevel.Medium => Difficulty.Medium,
             DifficultyLevel.Hard => Difficulty.Hard,
