@@ -2,6 +2,7 @@
 {
     public enum DifficultyLevel
     {
+        UltraEasy,
         Easy,
         Medium,
         Hard,
@@ -24,7 +25,7 @@
             MineCount = mineCount;
             DisplayName = displayName;
         }
-
+        public static Difficulty UltraEasy => new Difficulty(DifficultyLevel.UltraEasy, 5, 5, 1, "Ultra Easy");
         public static Difficulty Easy => new Difficulty(DifficultyLevel.Easy, 9, 9, 10, "Easy");
         public static Difficulty Medium => new Difficulty(DifficultyLevel.Medium, 16, 16, 40, "Medium");
         public static Difficulty Hard => new Difficulty(DifficultyLevel.Hard, 16, 30, 99, "Hard");

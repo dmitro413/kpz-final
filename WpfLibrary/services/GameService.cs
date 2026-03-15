@@ -73,6 +73,7 @@ namespace WpfLibrary.services
             }
             else
             {
+                if (Board.FlagCount >= Board.MineCount) return;
                 cell.State = CellState.Flagged;
                 Board.IncrementFlagCount();
             }

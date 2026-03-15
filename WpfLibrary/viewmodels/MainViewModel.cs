@@ -9,7 +9,6 @@ namespace WpfLibrary.viewmodels
 
     public class MainViewModel : BaseViewModel
     {
-
         private readonly IRecordRepository _recordRepository;
         private AppView _currentView;
 
@@ -32,6 +31,17 @@ namespace WpfLibrary.viewmodels
         public ICommand ShowSettingsCommand { get; }
         public ICommand StartNewGameCommand { get; }
 
+        private BaseViewModel _currentPage;
+        public BaseViewModel CurrentPage
+        {
+            get => _currentPage;
+            set
+            {
+                SetProperty(ref _currentPage, value);
+                NotifyViewChanged();
+            }
+        }
+
         public MainViewModel(GameViewModel gameViewModel, LeaderboardViewModel leaderboardViewModel,
             SettingsViewModel settingsViewModel, IRecordRepository recordRepository)
         {
@@ -46,31 +56,36 @@ namespace WpfLibrary.viewmodels
             StartNewGameCommand = new RelayCommand(StartNewGame);
 
             GameViewModel.GameWon += OnGameWon;
-
-            StartNewGame();
+            SettingsViewModel.SettingsSaved += StartNewGame;
+            var settings = SettingsViewModel.GetCurrentSettings();
+            GameViewModel.LoadGame(settings.GetDifficulty(), settings.CellSize);
         }
 
-        private BaseViewModel _currentPage;
-        public BaseViewModel CurrentPage
+        public void NavigateToGamePublic() => NavigateToGame();
+
+        private void NavigateToGame()
         {
-            get => _currentPage;
-            set
-            {
-                SetProperty(ref _currentPage, value);
-                NotifyViewChanged();
-            }
+            CurrentView = AppView.Game;
+            CurrentPage = GameViewModel;
         }
 
-        private void NavigateToGame() { CurrentView = AppView.Game; CurrentPage = GameViewModel; }
-        private void NavigateToLeaderboard() { CurrentView = AppView.Leaderboard; LeaderboardViewModel.Refresh(); CurrentPage = LeaderboardViewModel; }
-        private void NavigateToSettings() { CurrentView = AppView.Settings; CurrentPage = SettingsViewModel; }
+        private void NavigateToLeaderboard()
+        {
+            CurrentView = AppView.Leaderboard;
+            LeaderboardViewModel.Refresh();
+            CurrentPage = LeaderboardViewModel;
+        }
 
+        private void NavigateToSettings()
+        {
+            CurrentView = AppView.Settings;
+            CurrentPage = SettingsViewModel;
+        }
 
         private void StartNewGame()
         {
             var settings = SettingsViewModel.GetCurrentSettings();
-            var difficulty = SettingsViewModel.GetCurrentSettings().GetDifficulty();
-            GameViewModel.LoadGame(difficulty, settings.CellSize);
+            GameViewModel.LoadGame(settings.GetDifficulty(), settings.CellSize);
             NavigateToGame();
         }
 
