@@ -2,7 +2,7 @@
 
 namespace WpfLibrary.services
 {
-    public class GameService
+    public class GameService : IGameService
     {
         private readonly IMineGenerator _mineGenerator;
 

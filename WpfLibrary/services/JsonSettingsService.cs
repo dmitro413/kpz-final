@@ -1,9 +1,9 @@
 ﻿using System.IO;
 using System.Text.Json;
 using WpfLibrary.models;
-namespace WpfLibrary.Services
+namespace WpfLibrary.services
 {
-    public class JsonSettingsService
+    public class JsonSettingsService : ISettingsService
     {
         private readonly string _filePath;
         private readonly JsonSerializerOptions _jsonOptions;
