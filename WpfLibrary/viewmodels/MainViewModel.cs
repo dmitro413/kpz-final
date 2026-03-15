@@ -1,5 +1,7 @@
 ﻿using System.Windows.Input;
 using WpfLibrary.Commands;
+using WpfLibrary.models;
+using WpfLibrary.services;
 
 namespace WpfLibrary.viewmodels
 {
@@ -7,6 +9,8 @@ namespace WpfLibrary.viewmodels
 
     public class MainViewModel : BaseViewModel
     {
+
+        private readonly IRecordRepository _recordRepository;
         private AppView _currentView;
 
         public GameViewModel GameViewModel { get; }
@@ -29,44 +33,55 @@ namespace WpfLibrary.viewmodels
         public ICommand StartNewGameCommand { get; }
 
         public MainViewModel(GameViewModel gameViewModel, LeaderboardViewModel leaderboardViewModel,
-            SettingsViewModel settingsViewModel)
+            SettingsViewModel settingsViewModel, IRecordRepository recordRepository)
         {
             GameViewModel = gameViewModel;
             LeaderboardViewModel = leaderboardViewModel;
             SettingsViewModel = settingsViewModel;
+            _recordRepository = recordRepository;
 
             ShowGameCommand = new RelayCommand(NavigateToGame);
             ShowLeaderboardCommand = new RelayCommand(NavigateToLeaderboard);
             ShowSettingsCommand = new RelayCommand(NavigateToSettings);
             StartNewGameCommand = new RelayCommand(StartNewGame);
 
+            GameViewModel.GameWon += OnGameWon;
+
             StartNewGame();
         }
 
-        private void NavigateToGame()
+        private BaseViewModel _currentPage;
+        public BaseViewModel CurrentPage
         {
-            CurrentView = AppView.Game;
-            NotifyViewChanged();
+            get => _currentPage;
+            set
+            {
+                SetProperty(ref _currentPage, value);
+                NotifyViewChanged();
+            }
         }
 
-        private void NavigateToLeaderboard()
-        {
-            CurrentView = AppView.Leaderboard;
-            LeaderboardViewModel.Refresh();
-            NotifyViewChanged();
-        }
+        private void NavigateToGame() { CurrentView = AppView.Game; CurrentPage = GameViewModel; }
+        private void NavigateToLeaderboard() { CurrentView = AppView.Leaderboard; LeaderboardViewModel.Refresh(); CurrentPage = LeaderboardViewModel; }
+        private void NavigateToSettings() { CurrentView = AppView.Settings; CurrentPage = SettingsViewModel; }
 
-        private void NavigateToSettings()
-        {
-            CurrentView = AppView.Settings;
-            NotifyViewChanged();
-        }
 
         private void StartNewGame()
         {
+            var settings = SettingsViewModel.GetCurrentSettings();
             var difficulty = SettingsViewModel.GetCurrentSettings().GetDifficulty();
-            GameViewModel.LoadGame(difficulty);
+            GameViewModel.LoadGame(difficulty, settings.CellSize);
             NavigateToGame();
+        }
+
+        private void OnGameWon(int timeSeconds)
+        {
+            var playerName = string.IsNullOrWhiteSpace(GameViewModel.PlayerName)
+                ? "Anonymous"
+                : GameViewModel.PlayerName;
+
+            var difficulty = SettingsViewModel.GetCurrentSettings().SelectedDifficulty;
+            _recordRepository.Save(new GameRecord(playerName, timeSeconds, difficulty));
         }
 
         private void NotifyViewChanged()

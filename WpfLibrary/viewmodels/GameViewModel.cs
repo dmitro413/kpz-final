@@ -13,6 +13,24 @@ namespace WpfLibrary.viewmodels
         private int _elapsedSeconds;
         private string _statusMessage = "Click any cell to start!";
         private string _faceEmoji = "🙂";
+        private string _playerName = string.Empty;
+        public bool IsGameWon => _gameService.State?.IsWon ?? false;
+        public bool IsGameLost => _gameService.State?.Phase == models.GamePhase.Lost;
+        private bool _isRecordSaved;
+        public bool IsRecordSaved { get => _isRecordSaved; set => SetProperty(ref _isRecordSaved, value); }
+        public ICommand SaveScoreCommand { get; }
+
+        public string PlayerName
+        {
+            get => _playerName;
+            set => SetProperty(ref _playerName, value);
+        }
+        private int _cellSize = 32;
+        public int CellSize
+        {
+            get => _cellSize;
+            set => SetProperty(ref _cellSize, value);
+        }
 
         public ObservableCollection<CellViewModel> Cells { get; } = new();
 
@@ -49,11 +67,20 @@ namespace WpfLibrary.viewmodels
             RevealCellCommand = new RelayCommand<CellViewModel>(OnRevealCell);
             ToggleFlagCommand = new RelayCommand<CellViewModel>(OnToggleFlag);
             NewGameCommand = new RelayCommand(OnNewGame);
+            SaveScoreCommand = new RelayCommand(OnSaveScore, () => IsGameWon && !IsRecordSaved);
+        }
+        private void OnSaveScore()
+        {
+            GameWon?.Invoke(ElapsedSeconds);
+            IsRecordSaved = true;
         }
 
-        public void LoadGame(Difficulty difficulty)
+        public void LoadGame(Difficulty difficulty, int cellSize)
         {
+            CellSize = cellSize;
+            IsRecordSaved = false;
             _timerService.Reset();
+            ElapsedSeconds = 0;
             _gameService.StartNewGame(difficulty);
             BuildCellGrid();
             FaceEmoji = "🙂";
@@ -61,6 +88,8 @@ namespace WpfLibrary.viewmodels
             OnPropertyChanged(nameof(Rows));
             OnPropertyChanged(nameof(Columns));
             OnPropertyChanged(nameof(RemainingMines));
+            OnPropertyChanged(nameof(IsGameWon));
+            OnPropertyChanged(nameof(IsGameLost));
         }
 
         private void OnRevealCell(CellViewModel? cellVm)
@@ -83,14 +112,14 @@ namespace WpfLibrary.viewmodels
             OnPropertyChanged(nameof(RemainingMines));
         }
 
-        private void OnNewGame() => LoadGame(_gameService.CurrentDifficulty);
+        private void OnNewGame() => LoadGame(_gameService.CurrentDifficulty, CellSize);
 
         private void OnGameWon()
         {
             _timerService.Stop();
             FaceEmoji = "😎";
             StatusMessage = $"You won in {FormattedTime}!";
-            GameWon?.Invoke(ElapsedSeconds);
+            OnPropertyChanged(nameof(IsGameWon));
         }
 
         private void OnGameLost()
@@ -98,6 +127,7 @@ namespace WpfLibrary.viewmodels
             _timerService.Stop();
             FaceEmoji = "😵";
             StatusMessage = "Game over! Boom 💥";
+            OnPropertyChanged(nameof(IsGameLost));
         }
 
         private void BuildCellGrid()

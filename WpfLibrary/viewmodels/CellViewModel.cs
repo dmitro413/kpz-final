@@ -14,6 +14,7 @@ namespace WpfLibrary.viewmodels
         public bool IsHidden => !_cell.IsRevealed && !_cell.IsFlagged;
         public int AdjacentMines => _cell.AdjacentMines;
         public bool ShowNumber => IsRevealed && !IsMine && AdjacentMines > 0;
+        public bool ShowMine => IsRevealed && IsMine;
 
         public CellViewModel(Cell cell)
         {
@@ -26,6 +27,8 @@ namespace WpfLibrary.viewmodels
             OnPropertyChanged(nameof(IsHidden));
             OnPropertyChanged(nameof(IsMine));
             OnPropertyChanged(nameof(ShowNumber));
+            OnPropertyChanged(nameof(ShowMine));
+            OnPropertyChanged(nameof(AdjacentMines));
         }
     }
 }

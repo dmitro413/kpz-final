@@ -44,6 +44,7 @@ namespace WpfLibrary.services
                 cell.State = CellState.Revealed;
                 State = GameState.Lost;
                 RevealAllMines();
+                BoardChanged?.Invoke();
                 GameLost?.Invoke();
                 return;
             }
