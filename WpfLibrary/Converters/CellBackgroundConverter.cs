@@ -13,7 +13,7 @@ namespace WpfLibrary.Converters
 
         public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
         {
-            if (values.Length < 3) return HiddenBrush;
+            if (values.Length < 3) return Brushes.Gray;
 
             bool isRevealed = values[0] is bool r && r;
             bool isMine = values[1] is bool m && m;
