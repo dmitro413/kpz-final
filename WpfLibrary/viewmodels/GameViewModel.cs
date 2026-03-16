@@ -43,6 +43,7 @@ namespace WpfLibrary.viewmodels
         public int Rows => _gameService.Board?.Rows ?? 0;
         public int Columns => _gameService.Board?.Columns ?? 0;
         public int RemainingMines => _gameService.Board?.RemainingMines ?? 0;
+        public int FlagsUsed => _gameService.Board?.FlagCount ?? 0;
 
         public int ElapsedSeconds
         {
