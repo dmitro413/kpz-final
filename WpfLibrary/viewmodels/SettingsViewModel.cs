@@ -1,12 +1,12 @@
 ﻿using System.Windows.Input;
 using WpfLibrary.Commands;
 using WpfLibrary.models;
-using WpfLibrary.Services;
+using WpfLibrary.services;
 namespace WpfLibrary.viewmodels
 {
     public class SettingsViewModel : BaseViewModel
     {
-        private readonly JsonSettingsService _settingsService;
+        private readonly ISettingsService _settingsService;
         private GameSettings _settings;
 
         public event Action? SettingsSaved;
@@ -88,7 +88,7 @@ namespace WpfLibrary.viewmodels
         public bool CanSave => ValidationError == null;
         public ICommand SaveCommand { get; }
 
-        public SettingsViewModel(JsonSettingsService settingsService)
+        public SettingsViewModel(ISettingsService settingsService)
         {
             _settingsService = settingsService;
             _settings = settingsService.Load();

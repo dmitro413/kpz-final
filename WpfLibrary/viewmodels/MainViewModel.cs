@@ -5,15 +5,21 @@ using WpfLibrary.services;
 
 namespace WpfLibrary.viewmodels
 {
-    public enum AppView { Game, Leaderboard, Settings }
-
+    public enum AppView { Game, Leaderboard, Statistics, Achievements, Settings }
     public class MainViewModel : BaseViewModel
     {
         private readonly IRecordRepository _recordRepository;
+        private readonly IStatisticsService _statisticsService;
+        private readonly IAchievementService _achievementService;
+
+        private int _winStreak;
+
         private AppView _currentView;
 
         public GameViewModel GameViewModel { get; }
         public LeaderboardViewModel LeaderboardViewModel { get; }
+        public StatisticsViewModel StatisticsViewModel { get; }
+        public AchievementViewModel AchievementViewModel { get; }
         public SettingsViewModel SettingsViewModel { get; }
 
         public AppView CurrentView
@@ -24,10 +30,14 @@ namespace WpfLibrary.viewmodels
 
         public bool IsGameView => CurrentView == AppView.Game;
         public bool IsLeaderboardView => CurrentView == AppView.Leaderboard;
+        public bool IsStatisticsView => CurrentView == AppView.Statistics;
+        public bool IsAchievementsView => CurrentView == AppView.Achievements;
         public bool IsSettingsView => CurrentView == AppView.Settings;
 
         public ICommand ShowGameCommand { get; }
         public ICommand ShowLeaderboardCommand { get; }
+        public ICommand ShowStatisticsCommand { get; }
+        public ICommand ShowAchievementsCommand { get; }
         public ICommand ShowSettingsCommand { get; }
         public ICommand StartNewGameCommand { get; }
 
@@ -42,21 +52,36 @@ namespace WpfLibrary.viewmodels
             }
         }
 
-        public MainViewModel(GameViewModel gameViewModel, LeaderboardViewModel leaderboardViewModel,
-            SettingsViewModel settingsViewModel, IRecordRepository recordRepository)
+        public MainViewModel(
+            GameViewModel gameViewModel,
+            LeaderboardViewModel leaderboardViewModel,
+            StatisticsViewModel statisticsViewModel,
+            AchievementViewModel achievementViewModel,
+            SettingsViewModel settingsViewModel,
+            IRecordRepository recordRepository,
+            IStatisticsService statisticsService,
+            IAchievementService achievementService)
         {
             GameViewModel = gameViewModel;
             LeaderboardViewModel = leaderboardViewModel;
+            StatisticsViewModel = statisticsViewModel;
+            AchievementViewModel = achievementViewModel;
             SettingsViewModel = settingsViewModel;
             _recordRepository = recordRepository;
+            _statisticsService = statisticsService;
+            _achievementService = achievementService;
 
             ShowGameCommand = new RelayCommand(NavigateToGame);
             ShowLeaderboardCommand = new RelayCommand(NavigateToLeaderboard);
+            ShowStatisticsCommand = new RelayCommand(NavigateToStatistics);
+            ShowAchievementsCommand = new RelayCommand(NavigateToAchievements);
             ShowSettingsCommand = new RelayCommand(NavigateToSettings);
             StartNewGameCommand = new RelayCommand(StartNewGame);
 
             GameViewModel.GameWon += OnGameWon;
+            GameViewModel.GameLost += OnGameLost;
             SettingsViewModel.SettingsSaved += StartNewGame;
+
             var settings = SettingsViewModel.GetCurrentSettings();
             GameViewModel.LoadGame(settings.GetDifficulty(), settings.CellSize);
         }
@@ -76,6 +101,19 @@ namespace WpfLibrary.viewmodels
             CurrentPage = LeaderboardViewModel;
         }
 
+        private void NavigateToStatistics()
+        {
+            CurrentView = AppView.Statistics;
+            StatisticsViewModel.Refresh();
+            CurrentPage = StatisticsViewModel;
+        }
+
+        private void NavigateToAchievements()
+        {
+            CurrentView = AppView.Achievements;
+            AchievementViewModel.Refresh();
+            CurrentPage = AchievementViewModel;
+        }
         private void NavigateToSettings()
         {
             CurrentView = AppView.Settings;
@@ -91,18 +129,34 @@ namespace WpfLibrary.viewmodels
 
         private void OnGameWon(int timeSeconds)
         {
+            _winStreak++;
             var playerName = string.IsNullOrWhiteSpace(GameViewModel.PlayerName)
                 ? "Anonymous"
                 : GameViewModel.PlayerName;
 
             var difficulty = SettingsViewModel.GetCurrentSettings().SelectedDifficulty;
+            var flagsUsed = GameViewModel.FlagsUsed;
+
             _recordRepository.Save(new GameRecord(playerName, timeSeconds, difficulty));
+            _statisticsService.RecordWin(difficulty, timeSeconds);
+            AchievementViewModel.OnWin(difficulty, timeSeconds, flagsUsed, _winStreak);
+
+            StatisticsViewModel.Refresh();
+        }
+        private void OnGameLost()
+        {
+            _winStreak = 0;
+            var difficulty = SettingsViewModel.GetCurrentSettings().SelectedDifficulty;
+            _statisticsService.RecordLoss(difficulty);
+            StatisticsViewModel.Refresh();
         }
 
         private void NotifyViewChanged()
         {
             OnPropertyChanged(nameof(IsGameView));
             OnPropertyChanged(nameof(IsLeaderboardView));
+            OnPropertyChanged(nameof(IsStatisticsView));
+            OnPropertyChanged(nameof(IsAchievementsView));
             OnPropertyChanged(nameof(IsSettingsView));
         }
     }

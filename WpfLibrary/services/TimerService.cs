@@ -2,7 +2,7 @@
 
 namespace WpfLibrary.services
 {
-    public class TimerService
+    public class TimerService : ITimerService
     {
         private readonly DispatcherTimer _timer;
         private int _elapsedSeconds;

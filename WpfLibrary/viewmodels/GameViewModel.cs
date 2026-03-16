@@ -7,24 +7,30 @@ namespace WpfLibrary.viewmodels
 {
     public class GameViewModel : BaseViewModel
     {
-        private readonly GameService _gameService;
-        private readonly TimerService _timerService;
+        private readonly IGameService _gameService;
+        private readonly ITimerService _timerService;
 
         private int _elapsedSeconds;
         private string _statusMessage = "Click any cell to start!";
         private string _faceEmoji = "🙂";
         private string _playerName = string.Empty;
+
         public bool IsGameWon => _gameService.State?.IsWon ?? false;
-        public bool IsGameLost => _gameService.State?.Phase == models.GamePhase.Lost;
+        public bool IsGameLost => _gameService.State?.Phase == GamePhase.Lost;
+
         private bool _isRecordSaved;
-        public bool IsRecordSaved { get => _isRecordSaved; set => SetProperty(ref _isRecordSaved, value); }
-        public ICommand SaveScoreCommand { get; }
+        public bool IsRecordSaved
+        {
+            get => _isRecordSaved;
+            set => SetProperty(ref _isRecordSaved, value);
+        }
 
         public string PlayerName
         {
             get => _playerName;
             set => SetProperty(ref _playerName, value);
         }
+
         private int _cellSize = 32;
         public int CellSize
         {
@@ -37,11 +43,16 @@ namespace WpfLibrary.viewmodels
         public int Rows => _gameService.Board?.Rows ?? 0;
         public int Columns => _gameService.Board?.Columns ?? 0;
         public int RemainingMines => _gameService.Board?.RemainingMines ?? 0;
+        public int FlagsUsed => _gameService.Board?.FlagCount ?? 0;
 
         public int ElapsedSeconds
         {
             get => _elapsedSeconds;
-            private set { SetProperty(ref _elapsedSeconds, value); OnPropertyChanged(nameof(FormattedTime)); }
+            private set
+            {
+                SetProperty(ref _elapsedSeconds, value);
+                OnPropertyChanged(nameof(FormattedTime));
+            }
         }
 
         public string StatusMessage { get => _statusMessage; private set => SetProperty(ref _statusMessage, value); }
@@ -51,10 +62,12 @@ namespace WpfLibrary.viewmodels
         public ICommand RevealCellCommand { get; }
         public ICommand ToggleFlagCommand { get; }
         public ICommand NewGameCommand { get; }
+        public ICommand SaveScoreCommand { get; }
 
         public event Action<int>? GameWon;
+        public event Action? GameLost;
 
-        public GameViewModel(GameService gameService, TimerService timerService)
+        public GameViewModel(IGameService gameService, ITimerService timerService)
         {
             _gameService = gameService;
             _timerService = timerService;
@@ -69,6 +82,7 @@ namespace WpfLibrary.viewmodels
             NewGameCommand = new RelayCommand(OnNewGame);
             SaveScoreCommand = new RelayCommand(OnSaveScore, () => IsGameWon && !IsRecordSaved);
         }
+
         private void OnSaveScore()
         {
             GameWon?.Invoke(ElapsedSeconds);
@@ -128,6 +142,7 @@ namespace WpfLibrary.viewmodels
             FaceEmoji = "😵";
             StatusMessage = "Game over! Boom 💥";
             OnPropertyChanged(nameof(IsGameLost));
+            GameLost?.Invoke();
         }
 
         private void BuildCellGrid()
