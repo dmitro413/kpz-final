@@ -64,6 +64,8 @@ namespace WpfLibrary.viewmodels
         public ICommand SaveScoreCommand { get; }
 
         public event Action<int>? GameWon;
+        public event Action? GameLost;
+
         public GameViewModel(IGameService gameService, ITimerService timerService)
         {
             _gameService = gameService;
@@ -79,6 +81,7 @@ namespace WpfLibrary.viewmodels
             NewGameCommand = new RelayCommand(OnNewGame);
             SaveScoreCommand = new RelayCommand(OnSaveScore, () => IsGameWon && !IsRecordSaved);
         }
+
         private void OnSaveScore()
         {
             GameWon?.Invoke(ElapsedSeconds);
@@ -138,6 +141,7 @@ namespace WpfLibrary.viewmodels
             FaceEmoji = "😵";
             StatusMessage = "Game over! Boom 💥";
             OnPropertyChanged(nameof(IsGameLost));
+            GameLost?.Invoke();
         }
 
         private void BuildCellGrid()
