@@ -5,19 +5,20 @@ using WpfLibrary.services;
 
 namespace WpfLibrary.viewmodels
 {
-    public enum AppView { Game, Leaderboard, Statistics, Achievements, Settings }
+    public enum AppView { Game, Leaderboard, History, Statistics, Achievements, Settings }
     public class MainViewModel : BaseViewModel
     {
         private readonly IRecordRepository _recordRepository;
         private readonly IStatisticsService _statisticsService;
         private readonly IAchievementService _achievementService;
+        private readonly IGameHistoryService _historyService;
 
         private int _winStreak;
-
         private AppView _currentView;
 
         public GameViewModel GameViewModel { get; }
         public LeaderboardViewModel LeaderboardViewModel { get; }
+        public GameHistoryViewModel HistoryViewModel { get; }
         public StatisticsViewModel StatisticsViewModel { get; }
         public AchievementViewModel AchievementViewModel { get; }
         public SettingsViewModel SettingsViewModel { get; }
@@ -30,12 +31,14 @@ namespace WpfLibrary.viewmodels
 
         public bool IsGameView => CurrentView == AppView.Game;
         public bool IsLeaderboardView => CurrentView == AppView.Leaderboard;
+        public bool IsHistoryView => CurrentView == AppView.History;
         public bool IsStatisticsView => CurrentView == AppView.Statistics;
         public bool IsAchievementsView => CurrentView == AppView.Achievements;
         public bool IsSettingsView => CurrentView == AppView.Settings;
 
         public ICommand ShowGameCommand { get; }
         public ICommand ShowLeaderboardCommand { get; }
+        public ICommand ShowHistoryCommand { get; }
         public ICommand ShowStatisticsCommand { get; }
         public ICommand ShowAchievementsCommand { get; }
         public ICommand ShowSettingsCommand { get; }
@@ -45,39 +48,40 @@ namespace WpfLibrary.viewmodels
         public BaseViewModel CurrentPage
         {
             get => _currentPage;
-            set
-            {
-                SetProperty(ref _currentPage, value);
-                NotifyViewChanged();
-            }
+            set { SetProperty(ref _currentPage, value); NotifyViewChanged(); }
         }
-
         public MainViewModel(
             GameViewModel gameViewModel,
             LeaderboardViewModel leaderboardViewModel,
+            GameHistoryViewModel historyViewModel,
             StatisticsViewModel statisticsViewModel,
             AchievementViewModel achievementViewModel,
             SettingsViewModel settingsViewModel,
             IRecordRepository recordRepository,
             IStatisticsService statisticsService,
-            IAchievementService achievementService)
+            IAchievementService achievementService,
+            IGameHistoryService historyService)
         {
             GameViewModel = gameViewModel;
             LeaderboardViewModel = leaderboardViewModel;
+            HistoryViewModel = historyViewModel;
             StatisticsViewModel = statisticsViewModel;
             AchievementViewModel = achievementViewModel;
             SettingsViewModel = settingsViewModel;
             _recordRepository = recordRepository;
             _statisticsService = statisticsService;
             _achievementService = achievementService;
+            _historyService = historyService;
 
             ShowGameCommand = new RelayCommand(NavigateToGame);
             ShowLeaderboardCommand = new RelayCommand(NavigateToLeaderboard);
+            ShowHistoryCommand = new RelayCommand(NavigateToHistory);
             ShowStatisticsCommand = new RelayCommand(NavigateToStatistics);
             ShowAchievementsCommand = new RelayCommand(NavigateToAchievements);
             ShowSettingsCommand = new RelayCommand(NavigateToSettings);
             StartNewGameCommand = new RelayCommand(StartNewGame);
 
+            // Observer: підписка на події гри
             GameViewModel.GameWon += OnGameWon;
             GameViewModel.GameLost += OnGameLost;
             SettingsViewModel.SettingsSaved += StartNewGame;
@@ -101,6 +105,13 @@ namespace WpfLibrary.viewmodels
             CurrentPage = LeaderboardViewModel;
         }
 
+        private void NavigateToHistory()
+        {
+            CurrentView = AppView.History;
+            HistoryViewModel.Refresh();
+            CurrentPage = HistoryViewModel;
+        }
+
         private void NavigateToStatistics()
         {
             CurrentView = AppView.Statistics;
@@ -114,6 +125,7 @@ namespace WpfLibrary.viewmodels
             AchievementViewModel.Refresh();
             CurrentPage = AchievementViewModel;
         }
+
         private void NavigateToSettings()
         {
             CurrentView = AppView.Settings;
@@ -126,35 +138,38 @@ namespace WpfLibrary.viewmodels
             GameViewModel.LoadGame(settings.GetDifficulty(), settings.CellSize);
             NavigateToGame();
         }
-
         private void OnGameWon(int timeSeconds)
         {
             _winStreak++;
-            var playerName = string.IsNullOrWhiteSpace(GameViewModel.PlayerName)
-                ? "Anonymous"
-                : GameViewModel.PlayerName;
-
             var difficulty = SettingsViewModel.GetCurrentSettings().SelectedDifficulty;
-            var flagsUsed = GameViewModel.FlagsUsed;
+            var playerName = string.IsNullOrWhiteSpace(GameViewModel.PlayerName)
+                ? "Anonymous" : GameViewModel.PlayerName;
 
             _recordRepository.Save(new GameRecord(playerName, timeSeconds, difficulty));
             _statisticsService.RecordWin(difficulty, timeSeconds);
-            AchievementViewModel.OnWin(difficulty, timeSeconds, flagsUsed, _winStreak);
+            _historyService.Record(new GameHistoryEntry(difficulty, true, timeSeconds));
 
+            AchievementViewModel.OnWin(difficulty, timeSeconds, GameViewModel.FlagsUsed, _winStreak);
             StatisticsViewModel.Refresh();
+            HistoryViewModel.Refresh();
         }
         private void OnGameLost()
         {
             _winStreak = 0;
             var difficulty = SettingsViewModel.GetCurrentSettings().SelectedDifficulty;
+
             _statisticsService.RecordLoss(difficulty);
+            _historyService.Record(new GameHistoryEntry(difficulty, false, GameViewModel.ElapsedSeconds));
+
             StatisticsViewModel.Refresh();
+            HistoryViewModel.Refresh();
         }
 
         private void NotifyViewChanged()
         {
             OnPropertyChanged(nameof(IsGameView));
             OnPropertyChanged(nameof(IsLeaderboardView));
+            OnPropertyChanged(nameof(IsHistoryView));
             OnPropertyChanged(nameof(IsStatisticsView));
             OnPropertyChanged(nameof(IsAchievementsView));
             OnPropertyChanged(nameof(IsSettingsView));
