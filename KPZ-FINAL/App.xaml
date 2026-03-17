@@ -3,12 +3,14 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:conv="clr-namespace:WpfLibrary.Converters;assembly=WpfLibrary"
              xmlns:local="clr-namespace:KPZ_FINAL"
-             StartupUri="MainWindow.xaml">
+             StartupUri="Views/MainWindow.xaml">
     <Application.Resources>
 
         <conv:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
         <conv:NumberToColorConverter    x:Key="NumberToColorConverter"/>
         <conv:CellBackgroundConverter   x:Key="CellBackgroundConverter"/>
+        <conv:InverseBoolConverter      x:Key="InverseBoolConverter"/>
+        <conv:RowIndexConverter         x:Key="RowIndexConverter"/>
 
         <Color x:Key="PrimaryColor">#1565C0</Color>
         <Color x:Key="AccentColor">#43A047</Color>
@@ -70,36 +72,6 @@
         <Style x:Key="DangerButtonStyle" TargetType="Button" BasedOn="{StaticResource BaseButtonStyle}">
             <Setter Property="Background" Value="{StaticResource DangerBrush}"/>
             <Setter Property="Foreground" Value="White"/>
-        </Style>
-
-        <Style x:Key="CellButtonStyle" TargetType="Button">
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Padding" Value="0"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="CellBorder"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="#9E9E9E" 
-                                BorderThickness="1"
-                                CornerRadius="2">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Opacity" Value="0.8"/>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter Property="Opacity" Value="0.6"/>
-                                <Setter TargetName="CellBorder" Property="Background" Value="#E0E0E0"/>
-                                <Setter TargetName="CellBorder" Property="BorderBrush" Value="#757575"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
         </Style>
     </Application.Resources>
 </Application>
