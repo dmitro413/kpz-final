@@ -5,7 +5,7 @@ using WpfLibrary.services;
 
 namespace WpfLibrary.viewmodels
 {
-    public enum AppView { Game, Leaderboard, History, Statistics, Achievements, Settings }
+    public enum AppView { Game, TimeAttack, Leaderboard, History, Statistics, Achievements, Settings }
     public class MainViewModel : BaseViewModel
     {
         private readonly IRecordRepository _recordRepository;
@@ -14,6 +14,8 @@ namespace WpfLibrary.viewmodels
         private readonly IGameHistoryService _historyService;
 
         private int _winStreak;
+
+        public TimeAttackViewModel TimeAttackViewModel { get; }
         private AppView _currentView;
 
         public GameViewModel GameViewModel { get; }
@@ -30,6 +32,7 @@ namespace WpfLibrary.viewmodels
         }
 
         public bool IsGameView => CurrentView == AppView.Game;
+        public bool IsTimeAttackView => CurrentView == AppView.TimeAttack;
         public bool IsLeaderboardView => CurrentView == AppView.Leaderboard;
         public bool IsHistoryView => CurrentView == AppView.History;
         public bool IsStatisticsView => CurrentView == AppView.Statistics;
@@ -37,6 +40,7 @@ namespace WpfLibrary.viewmodels
         public bool IsSettingsView => CurrentView == AppView.Settings;
 
         public ICommand ShowGameCommand { get; }
+        public ICommand ShowTimeAttackCommand { get; }
         public ICommand ShowLeaderboardCommand { get; }
         public ICommand ShowHistoryCommand { get; }
         public ICommand ShowStatisticsCommand { get; }
@@ -50,10 +54,12 @@ namespace WpfLibrary.viewmodels
             get => _currentPage;
             set { SetProperty(ref _currentPage, value); NotifyViewChanged(); }
         }
+
         public MainViewModel(
             GameViewModel gameViewModel,
             LeaderboardViewModel leaderboardViewModel,
             GameHistoryViewModel historyViewModel,
+            TimeAttackViewModel timeAttackViewModel,
             StatisticsViewModel statisticsViewModel,
             AchievementViewModel achievementViewModel,
             SettingsViewModel settingsViewModel,
@@ -65,6 +71,7 @@ namespace WpfLibrary.viewmodels
             GameViewModel = gameViewModel;
             LeaderboardViewModel = leaderboardViewModel;
             HistoryViewModel = historyViewModel;
+            TimeAttackViewModel = timeAttackViewModel;
             StatisticsViewModel = statisticsViewModel;
             AchievementViewModel = achievementViewModel;
             SettingsViewModel = settingsViewModel;
@@ -74,6 +81,7 @@ namespace WpfLibrary.viewmodels
             _historyService = historyService;
 
             ShowGameCommand = new RelayCommand(NavigateToGame);
+            ShowTimeAttackCommand = new RelayCommand(NavigateToTimeAttack);
             ShowLeaderboardCommand = new RelayCommand(NavigateToLeaderboard);
             ShowHistoryCommand = new RelayCommand(NavigateToHistory);
             ShowStatisticsCommand = new RelayCommand(NavigateToStatistics);
@@ -81,7 +89,6 @@ namespace WpfLibrary.viewmodels
             ShowSettingsCommand = new RelayCommand(NavigateToSettings);
             StartNewGameCommand = new RelayCommand(StartNewGame);
 
-            // Observer: підписка на події гри
             GameViewModel.GameWon += OnGameWon;
             GameViewModel.GameLost += OnGameLost;
             SettingsViewModel.SettingsSaved += StartNewGame;
@@ -96,6 +103,12 @@ namespace WpfLibrary.viewmodels
         {
             CurrentView = AppView.Game;
             CurrentPage = GameViewModel;
+        }
+
+        private void NavigateToTimeAttack()
+        {
+            CurrentView = AppView.TimeAttack;
+            CurrentPage = TimeAttackViewModel;
         }
 
         private void NavigateToLeaderboard()
@@ -168,6 +181,7 @@ namespace WpfLibrary.viewmodels
         private void NotifyViewChanged()
         {
             OnPropertyChanged(nameof(IsGameView));
+            OnPropertyChanged(nameof(IsTimeAttackView));
             OnPropertyChanged(nameof(IsLeaderboardView));
             OnPropertyChanged(nameof(IsHistoryView));
             OnPropertyChanged(nameof(IsStatisticsView));
