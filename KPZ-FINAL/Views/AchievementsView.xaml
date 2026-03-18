@@ -1,0 +1,147 @@
+﻿<UserControl x:Class="KPZ_FINAL.Views.AchievementsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:conv="clr-namespace:WpfLibrary.Converters;assembly=WpfLibrary"
+             mc:Ignorable="d">
+
+    <UserControl.Resources>
+        <conv:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+    </UserControl.Resources>
+
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="🏅 Achievements" FontSize="24" FontWeight="Bold"
+                   FontFamily="Segoe UI Emoji"
+                   Foreground="{StaticResource PrimaryBrush}" Margin="0,0,0,16"/>
+
+        <Border Grid.Row="1"
+                Visibility="{Binding HasNewAchievements, Converter={StaticResource BoolToVisibilityConverter}}"
+                Background="#FFF9C4" BorderBrush="#F9A825" BorderThickness="1"
+                CornerRadius="8" Padding="12,10" Margin="0,0,0,16">
+            <DockPanel>
+                <Button DockPanel.Dock="Right"
+                        Content="✕" Command="{Binding DismissNewCommand}"
+                        Background="Transparent" BorderThickness="0"
+                        FontSize="14" Cursor="Hand" Foreground="#F57F17"/>
+                <StackPanel>
+                    <TextBlock Text="🎉 New achievements unlocked!" FontWeight="Bold"
+                               FontFamily="Segoe UI Emoji" Foreground="#F57F17" Margin="0,0,0,6"/>
+                    <ItemsControl ItemsSource="{Binding NewAchievements}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock FontFamily="Segoe UI Emoji" Foreground="#7B4F00" Margin="0,2">
+                                    <Run Text="{Binding Icon}"/>
+                                    <Run Text=" "/>
+                                    <Run Text="{Binding Title}" FontWeight="SemiBold"/>
+                                    <Run Text=" — "/>
+                                    <Run Text="{Binding Description}"/>
+                                </TextBlock>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <Border Grid.Row="2" Background="{StaticResource SurfaceBrush}"
+                BorderBrush="#DDDDDD" BorderThickness="1"
+                CornerRadius="8" Padding="16,12" Margin="0,0,0,16">
+            <StackPanel>
+                <DockPanel Margin="0,0,0,6">
+                    <TextBlock DockPanel.Dock="Right"
+                               Foreground="{StaticResource PrimaryBrush}" FontWeight="Bold">
+                        <Run Text="{Binding UnlockedCount, Mode=OneWay}"/>
+                        <Run Text=" / "/>
+                        <Run Text="{Binding TotalCount, Mode=OneWay}"/>
+                    </TextBlock>
+                    <TextBlock Text="Progress" FontWeight="SemiBold"/>
+                </DockPanel>
+                <ProgressBar Minimum="0"
+                             Maximum="{Binding TotalCount, Mode=OneWay}"
+                             Value="{Binding UnlockedCount, Mode=OneWay}"
+                             Height="10"
+                             Foreground="{StaticResource AccentBrush}"
+                             Background="#E0E0E0"/>
+            </StackPanel>
+        </Border>
+
+        <ScrollViewer Grid.Row="3" VerticalScrollBarVisibility="Auto" Margin="0,0,0,16">
+            <ItemsControl ItemsSource="{Binding AllAchievements}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border Margin="0,0,0,8" Padding="14,10" CornerRadius="8"
+                                BorderThickness="1">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Setter Property="Background"   Value="#F5F5F5"/>
+                                    <Setter Property="BorderBrush"  Value="#E0E0E0"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsUnlocked}" Value="True">
+                                            <Setter Property="Background"  Value="#E8F5E9"/>
+                                            <Setter Property="BorderBrush" Value="#A5D6A7"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Left"
+                                           Text="{Binding Icon}"
+                                           FontSize="26" FontFamily="Segoe UI Emoji"
+                                           VerticalAlignment="Center" Margin="0,0,12,0">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsUnlocked}" Value="False">
+                                                    <Setter Property="Opacity" Value="0.3"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+
+                                <TextBlock DockPanel.Dock="Right"
+                                           Text="{Binding FormattedDate}"
+                                           FontSize="11" Foreground="Gray"
+                                           VerticalAlignment="Center"/>
+
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding Title}"
+                                               FontWeight="SemiBold" FontSize="14">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Foreground" Value="#1565C0"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsUnlocked}" Value="False">
+                                                        <Setter Property="Foreground" Value="#9E9E9E"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                    <TextBlock Text="{Binding Description}"
+                                               FontSize="12" Foreground="Gray"
+                                               TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </DockPanel>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+
+        <Button Grid.Row="4" Content="Reset Achievements"
+                Command="{Binding ResetCommand}"
+                Style="{StaticResource DangerButtonStyle}"
+                HorizontalAlignment="Left"/>
+    </Grid>
+</UserControl>

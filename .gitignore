@@ -1,4 +1,9 @@
-[Bb]in/
-[Ob]j/
+**/bin/
+**/obj/
+**/[Bb]in/
+**/[Ob]j/
 .vs/
-[Xx]64/
+*.user
+*.suo
+x64/
+x86/
