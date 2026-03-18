@@ -1,0 +1,178 @@
+﻿<UserControl x:Class="KPZ_FINAL.Views.TimeAttackView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Background="{StaticResource SurfaceBrush}"
+                BorderBrush="#DDDDDD" BorderThickness="1"
+                CornerRadius="6" Padding="12,8" Margin="0,0,0,10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="⭐ " FontSize="16" FontFamily="Segoe UI Emoji" VerticalAlignment="Center"/>
+                    <Grid Margin="0,0,12,0">
+                        <TextBlock Text="{Binding Score}" FontSize="22" FontWeight="Bold"
+                                   Foreground="{StaticResource PrimaryBrush}" VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding PenaltyFlash}" FontSize="18" FontWeight="Bold"
+                                   Foreground="#E53935" VerticalAlignment="Center"
+                                   HorizontalAlignment="Right" Margin="0,-20,0,0"
+                                   Visibility="{Binding PenaltyFlash, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=NotNull}"/>
+                    </Grid>
+                    <Button Content="↩ Restart"
+                            Command="{Binding RestartCommand}"
+                            Visibility="{Binding IsRunning, Converter={StaticResource BoolToVisibilityConverter}}"
+                            Style="{StaticResource DangerButtonStyle}"
+                            FontSize="11" FontFamily="Segoe UI Emoji"/>
+                </StackPanel>
+
+                <TextBlock Grid.Column="1" Text="{Binding FormattedTimeLeft}"
+                           FontSize="28" FontWeight="Bold" HorizontalAlignment="Center">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Foreground" Value="{StaticResource PrimaryBrush}"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsTimeLow}" Value="True">
+                                    <Setter Property="Foreground" Value="#E53935"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+
+                <StackPanel Grid.Column="2" Orientation="Horizontal"
+                            HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding MinesHit}" FontSize="22" FontWeight="Bold"
+                               Foreground="#E53935" VerticalAlignment="Center"/>
+                    <TextBlock Text=" 💣" FontSize="16" FontFamily="Segoe UI Emoji" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Border Grid.Row="1"
+                Visibility="{Binding IsRunning, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Invert}"
+                Background="#E3F2FD" BorderBrush="#90CAF9" BorderThickness="1"
+                CornerRadius="6" Padding="12,10" Margin="0,0,0,10">
+            <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
+                <TextBlock Text="⏱ Reveal as many cells as possible in 60 seconds!"
+                           VerticalAlignment="Center" FontWeight="SemiBold"
+                           FontFamily="Segoe UI Emoji" Margin="0,0,12,0"/>
+                <Button Command="{Binding StartCommand}"
+                        Style="{StaticResource AccentButtonStyle}">
+                    <Button.Content>
+                        <TextBlock FontFamily="Segoe UI Emoji">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Text" Value="▶ Start"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsGameOver}" Value="True">
+                                            <Setter Property="Text" Value="🔄 Play Again"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </Button.Content>
+                </Button>
+            </StackPanel>
+        </Border>
+
+        <Border Grid.Row="1"
+                Visibility="{Binding IsGameOver, Converter={StaticResource BoolToVisibilityConverter}}"
+                Background="#E8F5E9" BorderBrush="#A5D6A7" BorderThickness="1"
+                CornerRadius="6" Padding="12,10" Margin="0,0,0,10">
+            <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
+                <TextBlock Text="{Binding FinalScoreMessage}"
+                           VerticalAlignment="Center" FontWeight="SemiBold" Margin="0,0,12,0"/>
+                <Button Command="{Binding StartCommand}"
+                        Style="{StaticResource AccentButtonStyle}">
+                    <Button.Content>
+                        <TextBlock Text="🔄 Play Again" FontFamily="Segoe UI Emoji"/>
+                    </Button.Content>
+                </Button>
+            </StackPanel>
+        </Border>
+
+        <ScrollViewer Grid.Row="2" HorizontalScrollBarVisibility="Auto"
+                      VerticalScrollBarVisibility="Auto">
+            <ItemsControl ItemsSource="{Binding Cells}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <UniformGrid Columns="{Binding Columns}" Rows="{Binding Rows}"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border Margin="1" CornerRadius="3" BorderThickness="1"
+                                Cursor="Hand"
+                                PreviewMouseRightButtonDown="Cell_PreviewMouseRightButtonDown"
+                                Width="{Binding DataContext.CellSize, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                Height="{Binding DataContext.CellSize, RelativeSource={RelativeSource AncestorType=ItemsControl}}">
+                            <Border.Background>
+                                <MultiBinding Converter="{StaticResource CellBackgroundConverter}">
+                                    <Binding Path="IsRevealed"/>
+                                    <Binding Path="IsMine"/>
+                                    <Binding Path="IsFlagged"/>
+                                </MultiBinding>
+                            </Border.Background>
+                            <Border.BorderBrush>
+                                <MultiBinding Converter="{StaticResource CellBackgroundConverter}">
+                                    <Binding Path="IsRevealed"/>
+                                    <Binding Path="IsMine"/>
+                                    <Binding Path="IsFlagged"/>
+                                </MultiBinding>
+                            </Border.BorderBrush>
+                            <Border.InputBindings>
+                                <MouseBinding Gesture="LeftClick"
+                                              Command="{Binding DataContext.RevealCellCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                              CommandParameter="{Binding}"/>
+                            </Border.InputBindings>
+                            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       FontWeight="Bold" FontSize="13" FontFamily="Segoe UI Emoji">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Text" Value=""/>
+                                        <Setter Property="Foreground"
+                                                Value="{Binding AdjacentMines, Converter={StaticResource NumberToColorConverter}}"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsFlagged}" Value="True">
+                                                <Setter Property="Text"       Value="🚩"/>
+                                                <Setter Property="Foreground" Value="#E53935"/>
+                                                <Setter Property="FontFamily" Value="Segoe UI Emoji"/>
+                                            </DataTrigger>
+                                            <MultiDataTrigger>
+                                                <MultiDataTrigger.Conditions>
+                                                    <Condition Binding="{Binding IsRevealed}" Value="True"/>
+                                                    <Condition Binding="{Binding IsMine}"     Value="True"/>
+                                                </MultiDataTrigger.Conditions>
+                                                <Setter Property="Text" Value="💣"/>
+                                            </MultiDataTrigger>
+                                            <MultiDataTrigger>
+                                                <MultiDataTrigger.Conditions>
+                                                    <Condition Binding="{Binding IsRevealed}"  Value="True"/>
+                                                    <Condition Binding="{Binding IsMine}"      Value="False"/>
+                                                    <Condition Binding="{Binding ShowNumber}"  Value="True"/>
+                                                </MultiDataTrigger.Conditions>
+                                                <Setter Property="Text" Value="{Binding AdjacentMines}"/>
+                                            </MultiDataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+    </Grid>
+</UserControl>
