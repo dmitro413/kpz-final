@@ -1,4 +1,5 @@
-﻿using WpfLibrary.models;
+﻿using WpfLibrary.helpers;
+using WpfLibrary.models;
 
 namespace WpfLibrary.models
 {
@@ -24,7 +25,7 @@ namespace WpfLibrary.models
             {
                 if (TotalWins == 0) return "—";
                 int avg = TotalTimeSecs / TotalWins;
-                return $"{avg / 60:D2}:{avg % 60:D2}";
+                return TimeFormatter.Format(avg);
             }
         }
 
@@ -49,8 +50,7 @@ namespace WpfLibrary.models
         public double WinRate =>
             Games == 0 ? 0.0 : Math.Round((double)Wins / Games * 100, 1);
 
-        public string FormattedBestTime =>
-            BestTime == int.MaxValue ? "—" : $"{BestTime / 60:D2}:{BestTime % 60:D2}";
+        public string FormattedBestTime => TimeFormatter.FormatOrDash(BestTime, BestTime == int.MaxValue);
 
         public string FormattedAvgTime
         {
@@ -58,7 +58,7 @@ namespace WpfLibrary.models
             {
                 if (Wins == 0) return "—";
                 int avg = TotalTime / Wins;
-                return $"{avg / 60:D2}:{avg % 60:D2}";
+                return TimeFormatter.Format(avg);
             }
         }
 
