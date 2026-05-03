@@ -1,4 +1,6 @@
-﻿namespace WpfLibrary.models
+﻿using WpfLibrary.helpers;
+
+namespace WpfLibrary.models
 {
     public class GameRecord
     {
@@ -7,7 +9,7 @@
         public DifficultyLevel Difficulty { get; set; }
         public DateTime Date { get; set; }
 
-        public string FormattedTime => $"{TimeSeconds / 60:D2}:{TimeSeconds % 60:D2}";
+        public string FormattedTime => TimeFormatter.Format(TimeSeconds);
         public string FormattedDate => Date.ToString("yyyy-MM-dd HH:mm");
 
         public GameRecord() { }

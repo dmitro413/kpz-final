@@ -3,6 +3,7 @@ using System.Windows.Input;
 using WpfLibrary.Commands;
 using WpfLibrary.models;
 using WpfLibrary.services;
+using WpfLibrary.helpers;
 namespace WpfLibrary.viewmodels
 {
     public class GameViewModel : BaseViewModel
@@ -57,7 +58,7 @@ namespace WpfLibrary.viewmodels
 
         public string StatusMessage { get => _statusMessage; private set => SetProperty(ref _statusMessage, value); }
         public string FaceEmoji { get => _faceEmoji; private set => SetProperty(ref _faceEmoji, value); }
-        public string FormattedTime => $"{ElapsedSeconds / 60:D2}:{ElapsedSeconds % 60:D2}";
+        public string FormattedTime => TimeFormatter.Format(ElapsedSeconds);
 
         public ICommand RevealCellCommand { get; }
         public ICommand ToggleFlagCommand { get; }

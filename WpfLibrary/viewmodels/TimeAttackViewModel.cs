@@ -1,6 +1,7 @@
 ﻿using System.Collections.ObjectModel;
 using System.Windows.Input;
 using WpfLibrary.Commands;
+using WpfLibrary.helpers;
 using WpfLibrary.models;
 using WpfLibrary.services;
 
@@ -55,8 +56,7 @@ namespace WpfLibrary.viewmodels
             private set => SetProperty(ref _cellSize, value);
         }
 
-        public string FormattedTimeLeft =>
-            $"{TimeLeft / 60:D2}:{TimeLeft % 60:D2}";
+        public string FormattedTimeLeft => TimeFormatter.Format(TimeLeft);
 
         public bool IsTimeLow => TimeLeft <= 10 && IsRunning;
 
