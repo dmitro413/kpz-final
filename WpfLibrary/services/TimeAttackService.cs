@@ -2,34 +2,27 @@
 
 namespace WpfLibrary.services
 {
-    public class TimeAttackService : IGameService
+    public class TimeAttackService : BaseGameService
     {
-        private readonly IMineGenerator _mineGenerator;
-
         public const int RoundDuration = 60;
         public const int BasePenalty = 10;
-
-        public Board Board { get; private set; }
-        public GameState State { get; private set; } = GameState.NotStarted;
-        public Difficulty CurrentDifficulty { get; private set; }
 
         public int Score { get; private set; }
         public int RevealedThisRound { get; private set; }
         public int MinesHit { get; private set; }
         public int LastPenalty { get; private set; }
 
-        public event Action GameWon;
-        public event Action GameLost;
-        public event Action BoardChanged;
+        public override event Action GameWon;
+        public override event Action GameLost;
+        public override event Action BoardChanged;
         public event Action BoardReset;
         public event Action<int> TimeUp;
 
-        public TimeAttackService(IMineGenerator mineGenerator)
+        public TimeAttackService(IMineGenerator mineGenerator) : base(mineGenerator)
         {
-            _mineGenerator = mineGenerator;
         }
 
-        public void StartNewGame(Difficulty difficulty)
+        public override void StartNewGame(Difficulty difficulty)
         {
             CurrentDifficulty = difficulty;
             Score = 0;
@@ -39,7 +32,7 @@ namespace WpfLibrary.services
             State = GameState.NotStarted;
         }
 
-        public void RevealCell(int row, int col)
+        public override void RevealCell(int row, int col)
         {
             if (State.IsOver) return;
 
@@ -71,30 +64,21 @@ namespace WpfLibrary.services
             BoardChanged?.Invoke();
         }
 
-        public void ToggleFlag(int row, int col)
-        {
-            if (State.IsOver || !State.IsActive) return;
-            var cell = Board.GetCell(row, col);
-            if (cell.IsRevealed) return;
-
-            if (cell.IsFlagged)
-            {
-                cell.State = CellState.Hidden;
-                Board.DecrementFlagCount();
-            }
-            else
-            {
-                if (Board.FlagCount >= Board.MineCount) return;
-                cell.State = CellState.Flagged;
-                Board.IncrementFlagCount();
-            }
-            BoardChanged?.Invoke();
-        }
         public void OnTimeUp()
         {
             State = GameState.Won;
             GameWon?.Invoke();
             TimeUp?.Invoke(Score);
+        }
+
+        protected override void OnMineHit()
+        {
+            // Не використовується в TimeAttack — логіка в RevealCell
+        }
+
+        protected override void OnSafeReveal()
+        {
+            // Не використовується в TimeAttack — логіка в RevealCell
         }
 
         private void ResetBoard()
@@ -111,27 +95,6 @@ namespace WpfLibrary.services
             State = GameState.NotStarted;
             RevealedThisRound = 0;
             BoardReset?.Invoke();
-        }
-
-        private void FloodReveal(int row, int col)
-        {
-            if (!Board.IsInBounds(row, col)) return;
-            var cell = Board.GetCell(row, col);
-            if (cell.IsRevealed || cell.IsFlagged || cell.IsMine) return;
-
-            cell.State = CellState.Revealed;
-
-            if (cell.AdjacentMines == 0)
-            {
-                foreach (var neighbor in Board.GetNeighbors(row, col))
-                    FloodReveal(neighbor.Row, neighbor.Column);
-            }
-        }
-
-        private void RevealAllMines()
-        {
-            foreach (var cell in Board.GetAllCells())
-                if (cell.IsMine) cell.State = CellState.Revealed;
         }
 
         private int CountRevealed() =>
