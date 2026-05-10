@@ -39,10 +39,9 @@ namespace WpfLibrary.viewmodels
             DismissNewCommand = new RelayCommand(DismissNew);
             LoadAll();
         }
-        public void OnWin(DifficultyLevel difficulty, int timeSeconds, int flagsUsed, int winStreak)
+        public void OnWin(GameResult gameResult)
         {
-            var newOnes = _achievementService.CheckOnWin(
-                difficulty, timeSeconds, flagsUsed, winStreak);
+            var newOnes = _achievementService.CheckOnWin(gameResult);
 
             if (newOnes.Any())
             {
