@@ -1,4 +1,4 @@
-﻿namespace WpfLibrary.models
+namespace WpfLibrary.models
 {
     public class Board
     {
@@ -55,5 +55,23 @@
 
         public void IncrementFlagCount() => FlagCount++;
         public void DecrementFlagCount() => FlagCount--;
+
+        public void RecalculateAdjacentMines()
+        {
+            for (int row = 0; row < Rows; row++)
+                for (int col = 0; col < Columns; col++)
+                {
+                    if (!GetCell(row, col).IsMine)
+                        GetCell(row, col).AdjacentMines = CountAdjacentMines(row, col);
+                }
+        }
+
+        private int CountAdjacentMines(int row, int col)
+        {
+            int count = 0;
+            foreach (var neighbor in GetNeighbors(row, col))
+                if (neighbor.IsMine) count++;
+            return count;
+        }
     }
 }

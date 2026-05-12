@@ -1,4 +1,4 @@
-﻿using WpfLibrary.models;
+using WpfLibrary.models;
 
 namespace WpfLibrary.services
 {
@@ -17,7 +17,7 @@ namespace WpfLibrary.services
                 board.GetCell(row, col).IsMine = true;
             }
 
-            CalculateAdjacentMineCounts(board);
+            board.RecalculateAdjacentMines();
         }
 
         private List<(int row, int col)> GetAvailablePositions(Board board, int safeRow, int safeCol)
@@ -43,23 +43,5 @@ namespace WpfLibrary.services
                 (list[i], list[j]) = (list[j], list[i]);
             }
         }
-
-        private void CalculateAdjacentMineCounts(Board board)
-        {
-            for (int row = 0; row < board.Rows; row++)
-                for (int col = 0; col < board.Columns; col++)
-                {
-                    if (!board.GetCell(row, col).IsMine)
-                        board.GetCell(row, col).AdjacentMines = CountAdjacentMines(board, row, col);
-                }
-        }
-
-        private int CountAdjacentMines(Board board, int row, int col)
-        {
-            int count = 0;
-            foreach (var neighbor in board.GetNeighbors(row, col))
-                if (neighbor.IsMine) count++;
-            return count;
-        }
     }
-}
+}
