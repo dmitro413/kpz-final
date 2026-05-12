@@ -8,21 +8,34 @@ namespace WpfLibrary.services
     public class AchievementService : IAchievementService
     {
         private readonly string _filePath;
-        private readonly JsonSerializerOptions _jsonOptions;
+        private readonly IDataStorage<List<AchievementSaveModel>> _storage; // Використовуємо стратегію
+        private List<Achievement> _achievements;
 
         private List<Achievement> _achievements;
 
-        public AchievementService(string filePath = "achievements.json")
+        public AchievementService(IDataStorage<List<AchievementSaveModel>> storage, string filePath = "achievements.json")
+    {
+        _storage = storage;
+        _filePath = filePath;
+        _achievements = LoadFromFile();
+    }
+
+    private List<Achievement> LoadFromFile()
+    {
+        var defaultList = BuildDefaultAchievements();
+        // Вся складна логіка десеріалізації тепер в один рядок:
+        var savedData = _storage.Load(_filePath, new List<AchievementSaveModel>());
+
+        foreach (var saved in savedData)
         {
-            _filePath = filePath;
-
-            _jsonOptions = new JsonSerializerOptions
+            var achievement = defaultList.FirstOrDefault(a => a.Id == saved.Id);
+            if (achievement != null && saved.IsUnlocked)
             {
-                WriteIndented = true
-            };
-
-            _achievements = LoadFromFile();
+                achievement.Unlock(saved.UnlockedAt);
+            }
         }
+        return defaultList;
+    }
 
         public IReadOnlyList<Achievement> GetAll() =>
             _achievements.AsReadOnly();
@@ -112,22 +125,13 @@ namespace WpfLibrary.services
         }
 
         private void SaveToFile()
-        {
-            var saveModels = _achievements
-                .Select(a => new AchievementSaveModel
-                {
-                    Id = a.Id,
-                    IsUnlocked = a.IsUnlocked,
-                    UnlockedAt = a.UnlockedAt
-                })
-                .ToList();
-
-            var json = JsonSerializer.Serialize(
-                saveModels,
-                _jsonOptions);
-
-            File.WriteAllText(_filePath, json);
-        }
+    {
+        var models = _achievements.Select(a => new AchievementSaveModel {
+            Id = a.Id, IsUnlocked = a.IsUnlocked, UnlockedAt = a.UnlockedAt 
+        }).ToList();
+        
+        _storage.Save(_filePath, models); // Просто віддаємо дані на збереження
+    }
 
         private static List<Achievement> BuildDefaultAchievements() => new()
         {
