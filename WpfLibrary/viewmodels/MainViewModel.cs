@@ -162,7 +162,7 @@ namespace WpfLibrary.viewmodels
             _statisticsService.RecordWin(difficulty, timeSeconds);
             _historyService.Record(new GameHistoryEntry(difficulty, true, timeSeconds));
 
-            AchievementViewModel.OnWin(difficulty, timeSeconds, GameViewModel.FlagsUsed, _winStreak);
+            AchievementViewModel.OnWin(new GameResult(difficulty, timeSeconds, GameViewModel.FlagsUsed, _winStreak));
             StatisticsViewModel.Refresh();
             HistoryViewModel.Refresh();
         }

@@ -8,11 +8,7 @@ namespace WpfLibrary.services
 
         IReadOnlyList<Achievement> GetUnlocked();
 
-        IReadOnlyList<Achievement> CheckOnWin(
-            DifficultyLevel difficulty,
-            int timeSeconds,
-            int flagsUsed,
-            int winStreak);
+        IReadOnlyList<Achievement> CheckOnWin(GameResult result);
         IReadOnlyList<Achievement> CheckOnLoss();
 
         void Reset();
