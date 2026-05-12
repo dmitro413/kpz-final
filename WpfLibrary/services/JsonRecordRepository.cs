@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using System.Text.Json;
 using WpfLibrary.models;
 using WpfLibrary.services;
