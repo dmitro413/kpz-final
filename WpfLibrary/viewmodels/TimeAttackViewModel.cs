@@ -1,5 +1,7 @@
-﻿using System.Collections.ObjectModel;
+﻿using System;
+using System.Collections.ObjectModel;
 using System.Windows.Input;
+using System.Windows.Threading;
 using WpfLibrary.Commands;
 using WpfLibrary.helpers;
 using WpfLibrary.models;
@@ -9,6 +11,9 @@ namespace WpfLibrary.viewmodels
 {
     public class TimeAttackViewModel : BaseViewModel
     {
+        private const Difficulty DefaultDifficulty = Difficulty.Medium;
+        private static readonly TimeSpan PenaltyFlashDuration = TimeSpan.FromSeconds(2);
+
         private readonly TimeAttackService _taService;
         private readonly ITimerService _timerService;
 
@@ -16,9 +21,12 @@ namespace WpfLibrary.viewmodels
         private bool _isRunning;
         private int _cellSize = 28;
 
-        private System.Windows.Threading.DispatcherTimer? _penaltyTimer;
+        private DispatcherTimer? _penaltyTimer;
         private bool _isResetting;
         private string _penaltyFlash = string.Empty;
+
+        private bool _isGameOver;
+
         public string PenaltyFlash
         {
             get => _penaltyFlash;
@@ -60,7 +68,6 @@ namespace WpfLibrary.viewmodels
 
         public bool IsTimeLow => TimeLeft <= 10 && IsRunning;
 
-        private bool _isGameOver;
         public bool IsGameOver
         {
             get => _isGameOver;
@@ -90,62 +97,63 @@ namespace WpfLibrary.viewmodels
             StartCommand = new RelayCommand(StartGame);
             RestartCommand = new RelayCommand(ResetToInitial);
 
-            _taService.StartNewGame(Difficulty.Medium);
-            BuildCells();
-            OnPropertyChanged(nameof(Rows));
-            OnPropertyChanged(nameof(Columns));
+            _penaltyTimer = CreatePenaltyTimer();
+
+            InitializeRound();
         }
 
         public void ResetToInitial()
         {
-            _timerService.Stop();
-            _timerService.Reset();
-            TimeLeft = TimeAttackService.RoundDuration;
-            IsRunning = false;
-            IsGameOver = false;
-            PenaltyFlash = string.Empty;
-            _penaltyTimer?.Stop();
-
-            _taService.StartNewGame(Difficulty.Medium);
-            BuildCells();
-            OnPropertyChanged(nameof(Rows));
-            OnPropertyChanged(nameof(Columns));
-            OnPropertyChanged(nameof(Score));
-            OnPropertyChanged(nameof(MinesHit));
+            InitializeRound();
         }
 
         public void StartGame()
         {
+            InitializeRound();
+            IsRunning = true;
+            _timerService.Start();
+        }
+
+        private void InitializeRound()
+        {
+            StopRoundTimer();
+            ResetRoundState();
+
+            _taService.StartNewGame(DefaultDifficulty);
+            RebuildCells();
+
+            NotifyBoardDimensionsChanged();
+            NotifyScoreChanged();
+            OnPropertyChanged(nameof(FinalScoreMessage));
+        }
+
+        private void ResetRoundState()
+        {
+            TimeLeft = TimeAttackService.RoundDuration;
+            IsRunning = false;
+            IsGameOver = false;
+            PenaltyFlash = string.Empty;
+            StopPenaltyTimer();
+        }
+
+        private void StopRoundTimer()
+        {
             _timerService.Stop();
             _timerService.Reset();
-
-            TimeLeft = TimeAttackService.RoundDuration;
-            IsGameOver = false;
-            IsRunning = true;
-
-            _taService.StartNewGame(Difficulty.Medium);
-            BuildCells();
-
-            OnPropertyChanged(nameof(Rows));
-            OnPropertyChanged(nameof(Columns));
-            OnPropertyChanged(nameof(Score));
-            OnPropertyChanged(nameof(MinesHit));
-            OnPropertyChanged(nameof(FinalScoreMessage));
-
-            _timerService.Start();
         }
 
         private void OnRevealCell(CellViewModel? cellVm)
         {
             if (cellVm == null || !IsRunning || _isResetting) return;
+
             _taService.RevealCell(cellVm.Row, cellVm.Column);
-            OnPropertyChanged(nameof(Score));
-            OnPropertyChanged(nameof(MinesHit));
+            NotifyScoreChanged();
         }
 
         private void OnToggleFlag(CellViewModel? cellVm)
         {
             if (cellVm == null || !IsRunning || _isResetting) return;
+
             _taService.ToggleFlag(cellVm.Row, cellVm.Column);
         }
 
@@ -154,6 +162,7 @@ namespace WpfLibrary.viewmodels
             if (!IsRunning) return;
 
             TimeLeft = Math.Max(0, TimeAttackService.RoundDuration - elapsed);
+
             if (TimeLeft == 0)
             {
                 _timerService.Stop();
@@ -161,7 +170,7 @@ namespace WpfLibrary.viewmodels
             }
         }
 
-        private void OnTimeUp(int finalScore)
+        private void OnTimeUp(int _)
         {
             IsRunning = false;
             IsGameOver = true;
@@ -171,11 +180,34 @@ namespace WpfLibrary.viewmodels
         private void OnBoardReset()
         {
             _isResetting = true;
-            BuildCells();
-            OnPropertyChanged(nameof(Score));
-            OnPropertyChanged(nameof(MinesHit));
-            ShowPenaltyFlash(_taService.LastPenalty);
-            _isResetting = false;
+
+            try
+            {
+                RebuildCells();
+                NotifyScoreChanged();
+                ShowPenaltyFlash(_taService.LastPenalty);
+            }
+            finally
+            {
+                _isResetting = false;
+            }
+        }
+
+        private DispatcherTimer CreatePenaltyTimer()
+        {
+            var timer = new DispatcherTimer
+            {
+                Interval = PenaltyFlashDuration
+            };
+
+            timer.Tick += OnPenaltyTimerTick;
+            return timer;
+        }
+
+        private void OnPenaltyTimerTick(object? sender, EventArgs e)
+        {
+            PenaltyFlash = string.Empty;
+            StopPenaltyTimer();
         }
 
         private void ShowPenaltyFlash(int penalty)
@@ -183,40 +215,65 @@ namespace WpfLibrary.viewmodels
             if (penalty <= 0) return;
 
             PenaltyFlash = $"-{penalty}";
+            _penaltyTimer ??= CreatePenaltyTimer();
 
-            _penaltyTimer?.Stop();
-            _penaltyTimer = new System.Windows.Threading.DispatcherTimer
-            {
-                Interval = TimeSpan.FromSeconds(2)
-            };
-            _penaltyTimer.Tick += (_, __) =>
-            {
-                PenaltyFlash = string.Empty;
-                _penaltyTimer.Stop();
-            };
+            _penaltyTimer.Stop();
             _penaltyTimer.Start();
         }
 
-        private void BuildCells()
+        private void StopPenaltyTimer()
+        {
+            _penaltyTimer?.Stop();
+        }
+
+        private void RebuildCells()
         {
             Cells.Clear();
-            foreach (var cell in _taService.Board.GetAllCells())
+
+            var board = _taService.Board;
+            if (board == null) return;
+
+            foreach (var cell in board.GetAllCells())
+            {
                 Cells.Add(new CellViewModel(cell));
+            }
         }
 
         private void RefreshCells()
         {
-            int expectedCount = (_taService.Board?.Rows ?? 0) * (_taService.Board?.Columns ?? 0);
+            var board = _taService.Board;
+            if (board == null)
+            {
+                Cells.Clear();
+                NotifyScoreChanged();
+                return;
+            }
+
+            int expectedCount = board.Rows * board.Columns;
+
             if (Cells.Count != expectedCount)
             {
-                BuildCells();
+                RebuildCells();
             }
             else
             {
                 foreach (var cell in Cells)
+                {
                     cell.Refresh();
+                }
             }
 
+            NotifyScoreChanged();
+        }
+
+        private void NotifyBoardDimensionsChanged()
+        {
+            OnPropertyChanged(nameof(Rows));
+            OnPropertyChanged(nameof(Columns));
+        }
+
+        private void NotifyScoreChanged()
+        {
             OnPropertyChanged(nameof(Score));
             OnPropertyChanged(nameof(MinesHit));
         }
